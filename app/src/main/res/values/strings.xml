@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Transpod</string>
+    <string name="toast_error_msg">Fill all required fields</string>
+</resources>
