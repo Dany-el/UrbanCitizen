@@ -19,7 +19,7 @@ import com.dyablonskyi.transpod.data.local.db.entity.Transport
         Route::class,
         Ticket::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

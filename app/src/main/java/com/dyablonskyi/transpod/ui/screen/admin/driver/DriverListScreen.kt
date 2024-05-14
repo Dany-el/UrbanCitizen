@@ -347,9 +347,9 @@ fun DriverInsertScreen(
                     ) {
                         transports.forEachIndexed { index, transport ->
                             DropdownMenuItem(
-                                text = { Text(transport.number.toString()) },
+                                text = { Text("[%04d]".format(transport.number)) },
                                 onClick = {
-                                    transportNumber = transport.number.toString()
+                                    transportNumber = "[%04d]".format(transport.number)
                                     transportIndex = index
                                     isTransportsExpanded = false
                                 }
@@ -382,7 +382,7 @@ fun DriverInsertScreen(
                             phoneNumber = phoneNumber,
                             address = address,
                             routeId = if (routeIndex >= 0) routes[routeIndex].id else null,
-                            transportId = if (transportIndex >= 0) transports[transportIndex].id else null
+                            transportId = if (transportIndex >= 0) transports[transportIndex].number.toLong() else null
                         )
                     )
                 }

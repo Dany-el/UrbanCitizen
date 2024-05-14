@@ -7,8 +7,7 @@ import androidx.room.PrimaryKey
 @Immutable
 @Entity("transport")
 data class Transport(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val number: Int,
+    @PrimaryKey(autoGenerate = true) val number: Int = 0,
     val type: TransportType
 )
 

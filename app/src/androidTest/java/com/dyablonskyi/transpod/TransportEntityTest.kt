@@ -56,9 +56,9 @@ class TransportEntityTest {
     @Test
     @Throws(IOException::class)
     fun readAvailableTransport(){
-        val transport1 = TestUtil.createTransport(number = 1233).copy(id = 1)
-        val transport2 = TestUtil.createTransport(number = 1235).copy(id = 2)
-        val transport3 = TestUtil.createTransport(number = 1237).copy(id = 3)
+        val transport1 = TestUtil.createTransport(number = 1233).copy(number = 1)
+        val transport2 = TestUtil.createTransport(number = 1235).copy(number = 2)
+        val transport3 = TestUtil.createTransport(number = 1237).copy(number = 3)
 
         val availableTransports: List<Transport>
         runBlocking {
@@ -66,7 +66,7 @@ class TransportEntityTest {
             transportDao.insert(transport2)
             transportDao.insert(transport3)
 
-            val driver = TestUtil.createDriver(transportId = transport2.id)
+            val driver = TestUtil.createDriver(transportId = transport2.number.toLong())
 
             driverDao.insert(driver)
             availableTransports = transportDao.getAllAvailable()

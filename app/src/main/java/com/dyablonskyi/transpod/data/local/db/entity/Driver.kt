@@ -30,7 +30,7 @@ data class DriverWithRouteAndTransport(
     val route: Route?,
     @Relation(
         parentColumn = "transportId",
-        entityColumn = "id"
+        entityColumn = "number"
     )
     val transport: Transport?
 )

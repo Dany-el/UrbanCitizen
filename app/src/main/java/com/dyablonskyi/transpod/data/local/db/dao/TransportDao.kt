@@ -14,6 +14,6 @@ interface TransportDao {
     @Query("SELECT * FROM transport ORDER BY type")
     suspend fun getAll(): List<Transport>
 
-    @Query("SELECT * FROM transport WHERE id NOT IN (SELECT transportId FROM driver WHERE transportId IS NOT NULL)")
+    @Query("SELECT * FROM transport WHERE number NOT IN (SELECT transportId FROM driver WHERE transportId IS NOT NULL)")
     suspend fun getAllAvailable(): List<Transport>
 }

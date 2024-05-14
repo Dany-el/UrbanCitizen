@@ -12,7 +12,7 @@ import java.time.LocalDateTime
     foreignKeys = [
         ForeignKey(
             entity = Transport::class,
-            parentColumns = arrayOf("id"),
+            parentColumns = arrayOf("number"),
             childColumns = arrayOf("transportId")
         )
     ]

@@ -61,7 +61,6 @@ import com.dyablonskyi.transpod.ui.theme.TranspodTheme
 fun TransportListScreen(
     transports: List<Transport>,
     onInsertButtonClick: (Transport) -> Unit,
-    showToastMessage: (String) -> Unit,
 ) {
     var showDialog by remember {
         mutableStateOf(false)
@@ -103,7 +102,6 @@ fun TransportListScreen(
                     onInsertButtonClick(transport)
                     showDialog = false
                 },
-                showToastMessage = showToastMessage,
                 onDismissRequest = { showDialog = false }
             )
         }
@@ -117,7 +115,7 @@ fun TransportList(
     LazyVerticalGrid(columns = GridCells.Fixed(2)) {
         items(
             transports,
-            key = { transport -> transport.id }
+            key = { transport -> transport.number }
         ) {
             TransportItem(number = it.number, type = it.type)
         }
@@ -158,14 +156,15 @@ fun TransportItem(
                     painter = image,
                     contentDescription = "Description",
                     modifier = Modifier
-                        .padding(horizontal = 10.dp)
+                        .padding(start = 10.dp)
                         .size(48.dp)
                 )
                 Text(
-                    text = "[$number]",
+                    text = "[%04d]".format(number),
                     textAlign = TextAlign.Center,
                     fontSize = 34.sp,
                     fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(end = 10.dp)
                 )
             }
         }
@@ -176,13 +175,8 @@ fun TransportItem(
 @Composable
 fun InsertTransportDialog(
     onInsertButtonClick: (Transport) -> Unit,
-    showToastMessage: (String) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val errorMessage = "Text field must be filled"
-
-    var transportNumber by rememberSaveable { mutableStateOf("") }
-    var isErrorNumberField by rememberSaveable { mutableStateOf(false) }
 
     val types = listOf("Bus", "Tram", "Trolley")
     var transportType by rememberSaveable { mutableStateOf(types.first()) }
@@ -210,29 +204,6 @@ fun InsertTransportDialog(
                 Column(
                     modifier = Modifier.align(Alignment.Center)
                 ) {
-                    OutlinedTextField(
-                        value = transportNumber,
-                        onValueChange = {
-                            transportNumber = it
-                            isErrorNumberField = transportNumber.isBlank()
-                        },
-                        label = { Text(text = "Number") },
-                        isError = isErrorNumberField,
-                        supportingText = {
-                            if (isErrorNumberField)
-                                Text(errorMessage)
-                        },
-                        trailingIcon = {
-                            if (isErrorNumberField)
-                                Icon(
-                                    painterResource(R.drawable.ic_outline_error),
-                                    "Error",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.padding(20.dp)
-                    )
                     ExposedDropdownMenuBox(
                         expanded = isTypesExpanded,
                         onExpandedChange = { isTypesExpanded = !isTypesExpanded },
@@ -265,23 +236,13 @@ fun InsertTransportDialog(
                     }
                 }
 
-                val errorMsg = stringResource(R.string.toast_error_msg)
-
                 TextButton(
                     onClick = {
-                        isErrorNumberField = transportNumber.isBlank()
-
-                        if (isErrorNumberField) {
-                            showToastMessage(errorMsg)
-                        } else {
-                            onInsertButtonClick(
-                                Transport(
-                                    number = transportNumber.toInt(),
-                                    type = TransportType.entries[transportTypeIndex]
-                                )
+                        onInsertButtonClick(
+                            Transport(
+                                type = TransportType.entries[transportTypeIndex]
                             )
-                        }
-
+                        )
                     },
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
@@ -313,7 +274,6 @@ private fun InsertTransportDialogPreview() {
     TranspodTheme {
         InsertTransportDialog(
             onInsertButtonClick = {},
-            showToastMessage = {},
             onDismissRequest = {})
     }
 }
