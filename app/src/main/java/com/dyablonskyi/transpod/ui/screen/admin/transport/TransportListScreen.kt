@@ -162,7 +162,7 @@ fun TransportItem(
                 Text(
                     text = "[%04d]".format(number),
                     textAlign = TextAlign.Center,
-                    fontSize = 34.sp,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(end = 10.dp)
                 )
