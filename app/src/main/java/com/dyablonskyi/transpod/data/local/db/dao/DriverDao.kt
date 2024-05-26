@@ -16,7 +16,6 @@ interface DriverDao {
     @Query("SELECT * FROM driver ORDER BY fullName DESC")
     suspend fun getAll(): List<Driver>
 
-    @Transaction
     @Query("SELECT * FROM driver")
     suspend fun getDriverWithRouteAndTransport(): List<DriverWithRouteAndTransport>
 

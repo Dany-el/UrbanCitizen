@@ -20,7 +20,6 @@ interface RouteDao {
     @Query("SELECT * FROM route WHERE name LIKE '%' || :search || '%'")
     suspend fun getByName(search: String?): List<Route>
 
-    @Transaction
     @Query(
         """
         SELECT r.id, r.name, COUNT(d.id) AS driver_count
@@ -31,7 +30,6 @@ interface RouteDao {
     )
     suspend fun countTotalDriversPerRoute(): List<RouteDriverCount>
 
-    @Transaction
     @Query(
         """
         SELECT id, name, (
@@ -44,7 +42,6 @@ interface RouteDao {
     )
     suspend fun countDriversPerIndividualRoute(): List<RouteDriverCount>
 
-    @Transaction
     @Query(
         """
         SELECT *
