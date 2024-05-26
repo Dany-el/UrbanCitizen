@@ -12,4 +12,10 @@ class DriverRepository @Inject constructor(
     suspend fun getAll() = driverDao.getAll()
 
     suspend fun getDriversWithRouteAndTransport() = driverDao.getDriverWithRouteAndTransport()
+
+    suspend fun getDriversByRouteId(routeId: Long) = driverDao.getDriverByhRouteId(routeId)
+
+    suspend fun countDriversWithoutTransport() = driverDao.countDriverWithoutTransport()
+
+    suspend fun getDriversWithoutRoute() = driverDao.getDriverWithoutRoute()
 }

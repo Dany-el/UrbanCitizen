@@ -19,4 +19,24 @@ interface DriverDao {
     @Transaction
     @Query("SELECT * FROM driver")
     suspend fun getDriverWithRouteAndTransport(): List<DriverWithRouteAndTransport>
+
+    @Query("SELECT * FROM driver WHERE routeId = :routeId")
+    suspend fun getDriverByhRouteId(routeId: Long): List<Driver>
+
+    @Query(
+        """
+        SELECT COUNT(*)
+        FROM driver
+        WHERE transportId IS NULL
+        """
+    )
+    suspend fun countDriverWithoutTransport(): Int
+
+    @Query(
+        """
+        SELECT * FROM driver
+        WHERE id NOT IN (SELECT id FROM driver WHERE routeID IS NOT NULL)
+        """
+    )
+    suspend fun getDriverWithoutRoute(): List<Driver>
 }
