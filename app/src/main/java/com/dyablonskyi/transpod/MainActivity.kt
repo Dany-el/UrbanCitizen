@@ -21,14 +21,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.dyablonskyi.transpod.data.local.db.entity.TicketBuilder
-import com.dyablonskyi.transpod.ui.MainViewModel
+import com.dyablonskyi.transpod.data.local.db.entity.Transport
 import com.dyablonskyi.transpod.ui.screen.admin.AdminScreen
 import com.dyablonskyi.transpod.ui.screen.admin.driver.DriverInsertScreen
 import com.dyablonskyi.transpod.ui.screen.admin.driver.DriverListScreen
+import com.dyablonskyi.transpod.ui.screen.admin.driver.DriverViewModel
 import com.dyablonskyi.transpod.ui.screen.admin.route.RouteListScreen
+import com.dyablonskyi.transpod.ui.screen.admin.route.RouteViewModel
 import com.dyablonskyi.transpod.ui.screen.admin.transport.TransportListScreen
+import com.dyablonskyi.transpod.ui.screen.admin.transport.TransportViewModel
 import com.dyablonskyi.transpod.ui.screen.main.MainScreen
 import com.dyablonskyi.transpod.ui.screen.user.UserScreen
+import com.dyablonskyi.transpod.ui.screen.user.ticket.TicketViewModel
 import com.dyablonskyi.transpod.ui.theme.TranspodTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -55,14 +59,23 @@ fun TranspodApp() {
 fun TranspodNavHost(
     navController: NavHostController,
     context: Context = LocalContext.current,
-    viewModel: MainViewModel = viewModel()
+    ticketViewModel: TicketViewModel = viewModel(),
+    driverViewModel: DriverViewModel = viewModel(),
+    transportViewModel: TransportViewModel = viewModel(),
+    routeViewModel: RouteViewModel = viewModel(),
 ) {
-    val tickets by viewModel.tickets.collectAsState()
-    val routes by viewModel.routes.collectAsState()
-    val drivers by viewModel.drivers.collectAsState()
-    val transports by viewModel.transports.collectAsState()
-    val availableTransports by viewModel.availableTransports.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val tickets by ticketViewModel.tickets.collectAsState()
+    val routes by routeViewModel.routes.collectAsState()
+    val drivers by driverViewModel.drivers.collectAsState()
+    val transports by transportViewModel.transports.collectAsState()
+    var availableTransports: List<Transport> = emptyList()
+
+    // Loading states
+    val isTicketsLoading by ticketViewModel.isLoading.collectAsState()
+    val isRoutesLoading by routeViewModel.isLoading.collectAsState()
+    val isDriversLoading by driverViewModel.isLoading.collectAsState()
+    val isTransportLoading by transportViewModel.isLoading.collectAsState()
+    val isAvailableTransportListLoading by transportViewModel.isLoading.collectAsState()
 
     NavHost(
         navController = navController,
@@ -70,9 +83,18 @@ fun TranspodNavHost(
     ) {
         composable(route = "main_screen") {
             LaunchedEffect(Unit) {
-                viewModel.loadAll()
+                ticketViewModel.loadTickets()
+                driverViewModel.loadDrivers()
+                transportViewModel.loadTransports()
+                routeViewModel.loadRoutes()
             }
-            if (isLoading) {
+
+            if (
+                isTicketsLoading ||
+                isRoutesLoading ||
+                isDriversLoading ||
+                isTransportLoading
+            ) {
                 Box(
                     Modifier.fillMaxSize()
                 ) {
@@ -87,11 +109,7 @@ fun TranspodNavHost(
         }
 
         composable(route = "user") {
-            LaunchedEffect(Unit) {
-                viewModel.loadTickets()
-            }
-
-            if (isLoading) {
+            if (isTicketsLoading) {
                 Box(
                     Modifier.fillMaxSize()
                 ) {
@@ -101,7 +119,7 @@ fun TranspodNavHost(
                 UserScreen(
                     tickets = tickets,
                     onBuyButtonClick = { duration ->
-                        viewModel.insertTicket(TicketBuilder(duration, null).build())
+                        ticketViewModel.insertTicket(TicketBuilder(duration, null).build())
                         Toast.makeText(
                             context,
                             "Have a safe trip",
@@ -121,10 +139,7 @@ fun TranspodNavHost(
         }
 
         composable(route = "routes") {
-            LaunchedEffect(Unit) {
-                viewModel.loadRoutes()
-            }
-            if (isLoading) {
+            if (isRoutesLoading) {
                 Box(
                     Modifier.fillMaxSize()
                 ) {
@@ -134,7 +149,7 @@ fun TranspodNavHost(
                 RouteListScreen(
                     routes = routes,
                     onInsertButtonClick = {
-                        viewModel.insertRoute(it)
+                        routeViewModel.insertRoute(it)
                     },
                     showToastMessage = {
                         Toast.makeText(
@@ -148,10 +163,7 @@ fun TranspodNavHost(
         }
 
         composable(route = "drivers") {
-            LaunchedEffect(Unit) {
-                viewModel.loadDrivers()
-            }
-            if (isLoading) {
+            if (isDriversLoading) {
                 Box(
                     Modifier.fillMaxSize()
                 ) {
@@ -166,9 +178,9 @@ fun TranspodNavHost(
 
         composable(route = "add_driver") {
             LaunchedEffect(Unit) {
-                viewModel.loadAvailableTransports()
+                availableTransports = transportViewModel.getAllAvailableTransports()
             }
-            if (isLoading) {
+            if (isAvailableTransportListLoading) {
                 Box(
                     Modifier.fillMaxSize()
                 ) {
@@ -186,7 +198,7 @@ fun TranspodNavHost(
                         ).show()
                     },
                     onInsertButtonClick = {
-                        viewModel.insertDriver(it)
+                        driverViewModel.insertDriver(it)
                         navController.popBackStack()
                     }
                 )
@@ -194,10 +206,7 @@ fun TranspodNavHost(
         }
 
         composable(route = "transports") {
-            LaunchedEffect(Unit) {
-                viewModel.loadTransports()
-            }
-            if (isLoading) {
+            if (isTransportLoading) {
                 Box(
                     Modifier.fillMaxSize()
                 ) {
@@ -207,7 +216,7 @@ fun TranspodNavHost(
                 TransportListScreen(
                     transports = transports,
                     onInsertButtonClick = { transport ->
-                        viewModel.insertTransport(transport)
+                        transportViewModel.insertTransport(transport)
                     }
                 )
             }
