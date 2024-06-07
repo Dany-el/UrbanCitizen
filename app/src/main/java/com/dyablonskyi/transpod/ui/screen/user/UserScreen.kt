@@ -1,9 +1,7 @@
 package com.dyablonskyi.transpod.ui.screen.user
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -11,11 +9,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,25 +35,52 @@ import com.dyablonskyi.transpod.data.local.db.entity.TicketBuilder
 import com.dyablonskyi.transpod.ui.screen.user.ticket.BuyTicketDialog
 import com.dyablonskyi.transpod.ui.screen.user.ticket.TicketItem
 import com.dyablonskyi.transpod.ui.theme.TranspodTheme
+import com.dyablonskyi.transpod.ui.util.TicketQuery
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserScreen(
     tickets: List<Ticket>,
     onBuyButtonClick: (Duration) -> Unit,
+    onValueChange: (TicketQuery) -> Unit
 ) {
-    var showDialog by remember {
-        mutableStateOf(false)
-    }
+    var showDialog by remember { mutableStateOf(false) }
+    var dropDownMenuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
-            Text(
-                text = "Welcome User 👋",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(20.dp)
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Welcome, User 👋",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(20.dp)
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { dropDownMenuExpanded = !dropDownMenuExpanded }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More"
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = dropDownMenuExpanded,
+                        onDismissRequest = { dropDownMenuExpanded = false }
+                    ) {
+                        TicketQuery.entries.forEach { query ->
+                            DropdownMenuItem(
+                                text = { Text(query.stringItem) },
+                                onClick = {
+                                    dropDownMenuExpanded = false
+                                    onValueChange(query)
+                                }
+                            )
+                        }
+                    }
+                }
             )
-            Spacer(modifier = Modifier.size(30.dp))
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -69,7 +100,7 @@ fun UserScreen(
         ) {
             TicketList(tickets)
         }
-        AnimatedVisibility(showDialog) {
+        if (showDialog) {
             BuyTicketDialog(
                 onBuyButtonClick = {
                     onBuyButtonClick(it)
@@ -86,15 +117,10 @@ fun TicketList(
     tickets: List<Ticket> = emptyList()
 ) {
     Column {
-        /*Text(
-            text = "Your tickets",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 20.dp)
-        )*/
         LazyColumn {
             items(
                 items = tickets,
-                key = { ticket -> ticket.id}
+                key = { ticket -> ticket.id }
             ) {
                 TicketItem(
                     startDate = it.startDate,
@@ -118,7 +144,9 @@ private fun UserScreenPreview() {
                 TicketBuilder(Duration.MONTH, null).build(),
                 TicketBuilder(Duration.MONTH, null).build(),
                 TicketBuilder(Duration.MONTH, null).build(),
-            )
-        ) {}
+            ),
+            {},
+            {}
+        )
     }
 }

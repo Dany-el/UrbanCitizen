@@ -13,13 +13,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -29,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -62,6 +65,8 @@ fun TransportListScreen(
         mutableStateOf(false)
     }
 
+    val gradeState = rememberLazyGridState()
+
     Scaffold(
         topBar = {
             Text(
@@ -79,7 +84,11 @@ fun TransportListScreen(
                     .padding(20.dp)
                     .size(74.dp)
             ) {
-                Icon(Icons.Filled.Add, "Floating action button.")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Add, "Floating action button.")
+                }
             }
         }
     ) {
@@ -89,7 +98,8 @@ fun TransportListScreen(
                 .padding(it)
         ) {
             TransportList(
-                transports
+                transports,
+                gradeState
             )
         }
         AnimatedVisibility(showDialog) {
@@ -106,9 +116,10 @@ fun TransportListScreen(
 
 @Composable
 fun TransportList(
-    transports: List<Transport>
+    transports: List<Transport>,
+    gradeState: LazyGridState
 ) {
-    LazyVerticalGrid(columns = GridCells.Fixed(2)) {
+    LazyVerticalGrid(columns = GridCells.Fixed(2), state = gradeState) {
         items(
             transports,
             key = { transport -> transport.number }
@@ -129,21 +140,21 @@ fun TransportItem(
         TransportType.TROLLEYBUS -> painterResource(id = R.drawable.ic_trolley)
     }
 
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.onPrimary
-        ),
+    Surface(
+        color = MaterialTheme.colorScheme.onPrimary,
+        tonalElevation = 3.dp,
         modifier = Modifier
             .fillMaxWidth()
             .height(150.dp)
-            .padding(15.dp)
-            .shadow(3.dp, MaterialTheme.shapes.medium)
+            .padding(5.dp)
+            .shadow(3.dp, MaterialTheme.shapes.small)
     ) {
         Box(
             Modifier.fillMaxSize()
         ) {
             Row(
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.Center)
@@ -183,7 +194,7 @@ fun InsertTransportDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(380.dp)
+                .height(280.dp)
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
@@ -204,11 +215,12 @@ fun InsertTransportDialog(
                         expanded = isTypesExpanded,
                         onExpandedChange = { isTypesExpanded = !isTypesExpanded },
                         modifier = Modifier
-                            .padding(20.dp)
+                            .padding(vertical = 10.dp, horizontal = 20.dp)
                     ) {
                         OutlinedTextField(
                             value = transportType,
                             placeholder = { Text(transportType) },
+                            label = { Text("Type") },
                             onValueChange = {},
                             readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isTypesExpanded) },
@@ -231,7 +243,6 @@ fun InsertTransportDialog(
                         }
                     }
                 }
-
                 TextButton(
                     onClick = {
                         onInsertButtonClick(
@@ -240,8 +251,17 @@ fun InsertTransportDialog(
                             )
                         )
                     },
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 10.dp)
+
                 ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "add_button",
+                        modifier = Modifier
+                            .size(34.dp)
+                    )
                     Text(
                         text = "Insert",
                         fontSize = 25.sp,
@@ -271,5 +291,22 @@ private fun InsertTransportDialogPreview() {
         InsertTransportDialog(
             onInsertButtonClick = {},
             onDismissRequest = {})
+    }
+}
+
+@Preview
+@Composable
+private fun FloatingButtonPreview() {
+    FloatingActionButton(
+        onClick = { },
+        Modifier
+            .padding(20.dp)
+            .size(74.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Add, "Floating action button.")
+        }
     }
 }

@@ -12,6 +12,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,31 +31,29 @@ fun TicketItem(
     price: Double,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.onPrimary
-        ),
+    Surface(
+        color = MaterialTheme.colorScheme.onPrimary,
         modifier = modifier
             .fillMaxWidth()
             .height(200.dp)
-            .padding(15.dp)
+            .padding(vertical = 5.dp, horizontal = 10.dp)
             .shadow(3.dp, MaterialTheme.shapes.medium)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "$$price",
+                text = "$price UAH",
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .padding(5.dp)
-                    .width(70.dp)
+                    .width(90.dp)
             )
             Divider(
                 Modifier
                     .fillMaxHeight()
-                    .width(1.dp)
+                    .width(2.dp)
             )
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

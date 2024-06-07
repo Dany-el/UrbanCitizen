@@ -25,7 +25,7 @@ class DriverRepository @Inject constructor(
         }
 
     suspend fun getDriversByRouteId(routeId: Long) = withContext(Dispatchers.IO) {
-        return@withContext driverDao.getDriverByhRouteId(routeId)
+        return@withContext driverDao.getDriverByRouteId(routeId)
     }
 
     suspend fun countDriversWithoutTransport() = withContext(Dispatchers.IO) {

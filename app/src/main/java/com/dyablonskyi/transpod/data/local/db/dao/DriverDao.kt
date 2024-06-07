@@ -3,7 +3,6 @@ package com.dyablonskyi.transpod.data.local.db.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import androidx.room.Transaction
 import com.dyablonskyi.transpod.data.local.db.entity.Driver
 import com.dyablonskyi.transpod.data.local.db.entity.DriverWithRouteAndTransport
 
@@ -20,7 +19,7 @@ interface DriverDao {
     suspend fun getDriverWithRouteAndTransport(): List<DriverWithRouteAndTransport>
 
     @Query("SELECT * FROM driver WHERE routeId = :routeId")
-    suspend fun getDriverByhRouteId(routeId: Long): List<Driver>
+    suspend fun getDriverByRouteId(routeId: Long): List<Driver>
 
     @Query(
         """

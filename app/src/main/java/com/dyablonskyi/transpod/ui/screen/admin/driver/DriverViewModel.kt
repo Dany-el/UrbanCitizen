@@ -6,6 +6,7 @@ import com.dyablonskyi.transpod.data.di.repository.DriverRepository
 import com.dyablonskyi.transpod.data.local.db.entity.Driver
 import com.dyablonskyi.transpod.data.local.db.entity.DriverWithRouteAndTransport
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,7 +29,6 @@ class DriverViewModel @Inject constructor(
             _drivers.value = repo.getDriversWithRouteAndTransport()
             _isLoading.value = false
         }
-        println("Drivers was read (${_drivers.value.size})")
     }
 
     fun insertDriver(driver: Driver) {
@@ -38,19 +38,17 @@ class DriverViewModel @Inject constructor(
         }
     }
 
-    fun getDriversByRouteId(routeId: Long): List<Driver> {
-        var list: List<Driver> = emptyList()
-        viewModelScope.launch {
-            list = repo.getDriversByRouteId(routeId)
+    suspend fun getDriversByRouteId(routeId: Long): List<Driver> {
+        val list = viewModelScope.async {
+            repo.getDriversByRouteId(routeId)
         }
-        return list
+        return list.await()
     }
 
-    fun countDriversWithoutTransport(): Int {
-        var count: Int = 0
-        viewModelScope.launch {
-            count = countDriversWithoutTransport()
+    suspend fun countDriversWithoutTransport(): Int {
+        val count = viewModelScope.async {
+            repo.countDriversWithoutTransport()
         }
-        return count
+        return count.await()
     }
 }

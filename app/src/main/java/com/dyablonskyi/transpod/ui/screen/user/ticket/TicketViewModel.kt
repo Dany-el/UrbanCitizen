@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.dyablonskyi.transpod.data.di.repository.TicketRepository
 import com.dyablonskyi.transpod.data.local.db.entity.Ticket
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,11 +37,9 @@ class TicketViewModel @Inject constructor(
         }
     }
 
-    fun getTicketsByStartDateInDuration(from: LocalDateTime, to: LocalDateTime): List<Ticket> {
-        var list: List<Ticket> = emptyList()
-        viewModelScope.launch {
-            list = repo.getTicketByStartDateIn(from, to)
-        }
-        return list
+    suspend fun filterTicketsByStartDateInDuration(from: LocalDateTime, to: LocalDateTime){
+        _tickets.value = viewModelScope.async {
+            repo.getTicketByStartDateIn(from, to)
+        }.await()
     }
 }

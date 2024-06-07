@@ -1,5 +1,6 @@
 package com.dyablonskyi.transpod.ui.screen.admin.driver
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,21 +17,24 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -54,22 +58,51 @@ import com.dyablonskyi.transpod.data.local.db.entity.Route
 import com.dyablonskyi.transpod.data.local.db.entity.Transport
 import com.dyablonskyi.transpod.data.local.db.entity.TransportType
 import com.dyablonskyi.transpod.ui.theme.TranspodTheme
+import com.dyablonskyi.transpod.ui.util.DriverQuery
 import com.dyablonskyi.transpod.ui.util.PhoneVisualTransformation
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DriverListScreen(
     drivers: List<DriverWithRouteAndTransport>,
-    onInsertButtonClick: () -> Unit
+    onInsertButtonClick: () -> Unit,
+    onValueChange: (DriverQuery) -> Unit
 ) {
+    var dropDownMenuExpanded by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
-            Text(
-                text = if (drivers.isNotEmpty()) "Here is the list" else "Looks like the list is empty",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(20.dp)
+            TopAppBar(
+                title = {
+                    Text(
+                        text = if (drivers.isNotEmpty()) "Here is the list" else "The list is empty",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { dropDownMenuExpanded = !dropDownMenuExpanded }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More"
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = dropDownMenuExpanded,
+                        onDismissRequest = { dropDownMenuExpanded = false }
+                    ) {
+                        DriverQuery.entries.forEach { query ->
+                            DropdownMenuItem(
+                                text = { Text(query.stringItem) },
+                                onClick = {
+                                    dropDownMenuExpanded = false
+                                    onValueChange(query)
+                                }
+                            )
+                        }
+                    }
+                }
             )
-            Spacer(modifier = Modifier.size(30.dp))
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -82,7 +115,7 @@ fun DriverListScreen(
             }
         }
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it)
@@ -112,29 +145,29 @@ fun DriverItem(
 ) {
     val (firstName, lastName) = link.driver.fullName.split(" ")
 
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.onPrimary
-        ),
+    Surface(
+        color = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .padding(15.dp)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
             .shadow(3.dp, MaterialTheme.shapes.medium)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Row(
-                Modifier.fillMaxSize()
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxSize()
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Profile photo",
                     modifier = Modifier
-                        .size(150.dp)
+                        .size(120.dp)
                         .align(Alignment.CenterVertically)
                 )
                 Column(
-                    Modifier.fillMaxHeight()
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxHeight()
                 ) {
                     Row(
                         modifier = Modifier
@@ -156,7 +189,12 @@ fun DriverItem(
 
                     Divider(Modifier.padding(end = 5.dp, top = 5.dp, bottom = 5.dp))
 
-                    Text(text = "Route: ${link.route?.name ?: "None"}")
+                    Text(
+                        text = "Route: ${link.route?.name ?: "None"}",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Spacer(modifier = Modifier.size(10.dp))
                     Text(text = "Transport #${link.transport?.number ?: "None"}")
                 }
@@ -187,6 +225,7 @@ fun DriverInsertScreen(
     // Phone number field
     var phoneNumber by rememberSaveable { mutableStateOf("") }
     var isErrorPhoneNumberField by rememberSaveable { mutableStateOf(false) }
+    var isNotEnoughDigits by rememberSaveable { mutableStateOf(false) }
 
     // Address field
     var address by rememberSaveable { mutableStateOf("") }
@@ -205,12 +244,15 @@ fun DriverInsertScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize()
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .align(Alignment.Center)
         ) {
             OutlinedTextField(
                 value = firstName,
-                onValueChange = {
-                    firstName = it
+                onValueChange = { s ->
+                    firstName = s.filter { !it.isWhitespace() }
                     isErrorNameField = firstName.isBlank()
                 },
                 label = { Text(text = "Name") },
@@ -227,12 +269,12 @@ fun DriverInsertScreen(
                             tint = MaterialTheme.colorScheme.error
                         )
                 },
-                modifier = Modifier.padding(15.dp)
+                modifier = Modifier.padding(10.dp)
             )
             OutlinedTextField(
                 value = lastName,
-                onValueChange = {
-                    lastName = it
+                onValueChange = { s ->
+                    lastName = s.filter { !it.isWhitespace() }
                     isErrorLastNameField = lastName.isBlank()
                 },
                 label = { Text(text = "Surname") },
@@ -249,28 +291,31 @@ fun DriverInsertScreen(
                             tint = MaterialTheme.colorScheme.error
                         )
                 },
-                modifier = Modifier.padding(15.dp)
+                modifier = Modifier.padding(10.dp)
             )
             PhoneNumberOutlinedField(
                 phone = phoneNumber,
                 onPhoneChanged = {
                     phoneNumber = it
                     isErrorPhoneNumberField = phoneNumber.isBlank()
+                    isNotEnoughDigits = phoneNumber.length < 10
                 },
-                isError = isErrorPhoneNumberField,
+                isError = isErrorPhoneNumberField || isNotEnoughDigits,
                 supportingText = {
                     if (isErrorPhoneNumberField)
                         Text(errorMessage)
+                    else if (isNotEnoughDigits)
+                        Text("Not enough digits in phone number(${phoneNumber.length}/10)")
                 },
                 trailingIcon = {
-                    if (isErrorPhoneNumberField)
+                    if (isErrorPhoneNumberField || isNotEnoughDigits)
                         Icon(
                             painterResource(R.drawable.ic_outline_error),
                             "Error",
                             tint = MaterialTheme.colorScheme.error
                         )
                 },
-                modifier = Modifier.padding(15.dp)
+                modifier = Modifier.padding(10.dp)
             )
             OutlinedTextField(
                 value = address,
@@ -292,7 +337,7 @@ fun DriverInsertScreen(
                             tint = MaterialTheme.colorScheme.error
                         )
                 },
-                modifier = Modifier.padding(15.dp)
+                modifier = Modifier.padding(10.dp)
             )
             ExposedDropdownMenuBox(
                 expanded = isRoutesExpanded,
@@ -366,15 +411,17 @@ fun DriverInsertScreen(
                 isErrorLastNameField = lastName.isBlank()
                 isErrorPhoneNumberField = phoneNumber.isBlank()
                 isErrorAddressField = address.isBlank()
+                isNotEnoughDigits = phoneNumber.length < 10
 
                 val errors = listOf(
                     isErrorNameField,
                     isErrorLastNameField,
                     isErrorPhoneNumberField,
-                    isErrorAddressField
+                    isErrorAddressField,
+                    isNotEnoughDigits
                 )
                 if (errors.any { it }) {
-                    showToastMessage("Fill all required fields")
+                    showToastMessage("There are fields with errors!")
                 } else {
                     onInsertButtonClick(
                         Driver(
@@ -390,8 +437,8 @@ fun DriverInsertScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(vertical = 25.dp)
-                .width(150.dp)
-                .height(60.dp)
+                .width(130.dp)
+                .height(50.dp)
         ) {
             Text(text = "Insert")
         }
@@ -413,7 +460,8 @@ fun PhoneNumberOutlinedField(
     OutlinedTextField(
         value = phone,
         onValueChange = { it ->
-            onPhoneChanged(it.take(mask.count { it == maskNumber }))
+            val numbers = it.filter { it.isDigit() }
+            onPhoneChanged(numbers.take(mask.count { it == maskNumber }))
         },
         label = {
             Text(text = "Phone number")
@@ -422,7 +470,7 @@ fun PhoneNumberOutlinedField(
         isError = isError,
         supportingText = supportingText,
         prefix = { Text(prefix) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         visualTransformation = PhoneVisualTransformation(mask, maskNumber),
         modifier = modifier
     )
@@ -483,5 +531,13 @@ private fun DriverInsertScreenPreview() {
             onInsertButtonClick = {},
             showToastMessage = {}
         )
+    }
+}
+
+@Preview
+@Composable
+private fun DriverListScreenPreview() {
+    TranspodTheme {
+        DriverListScreen(drivers = emptyList(), onInsertButtonClick = {}, onValueChange = {})
     }
 }

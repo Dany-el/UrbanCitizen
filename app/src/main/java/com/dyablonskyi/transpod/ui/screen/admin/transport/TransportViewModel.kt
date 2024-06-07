@@ -39,11 +39,9 @@ class TransportViewModel @Inject constructor(
         }
     }
 
-    fun getAllAvailableTransports(): List<Transport> {
-        var list: List<Transport> = emptyList()
+    fun loadAvailableTransports() {
         viewModelScope.launch {
-            list = repo.getAllAvailable()
+            _availableTransports.value = repo.getAllAvailable()
         }
-        return list
     }
 }

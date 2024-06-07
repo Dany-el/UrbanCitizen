@@ -16,15 +16,22 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +45,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,26 +53,53 @@ import androidx.compose.ui.window.Dialog
 import com.dyablonskyi.transpod.R
 import com.dyablonskyi.transpod.data.local.db.entity.Route
 import com.dyablonskyi.transpod.ui.theme.TranspodTheme
+import com.dyablonskyi.transpod.ui.util.RouteQuery
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RouteListScreen(
     routes: List<Route>,
     onInsertButtonClick: (Route) -> Unit,
     showToastMessage: (String) -> Unit,
+    onValueChange: (RouteQuery) -> Unit
 ) {
-    var showDialog by remember {
-        mutableStateOf(false)
-    }
+    var showDialog by remember { mutableStateOf(false) }
+    var dropDownMenuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
-            Text(
-                text = if (routes.isNotEmpty()) "Here is the list" else "Looks like the list is empty",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(20.dp)
+            TopAppBar(
+                title = {
+                    Text(
+                        text = if (routes.isNotEmpty()) "Here is the list" else "The list is empty",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(20.dp)
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { dropDownMenuExpanded = !dropDownMenuExpanded }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More"
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = dropDownMenuExpanded,
+                        onDismissRequest = { dropDownMenuExpanded = false }
+                    ) {
+                        RouteQuery.entries.forEach { query ->
+                            DropdownMenuItem(
+                                text = { Text(query.stringItem) },
+                                onClick = {
+                                    dropDownMenuExpanded = false
+                                    onValueChange(query)
+                                }
+                            )
+                        }
+                    }
+                }
             )
-            Spacer(modifier = Modifier.size(30.dp))
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -117,15 +152,14 @@ fun RouteItem(
     start: String,
     end: String
 ) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.onPrimary
-        ),
+    Surface(
+        color = MaterialTheme.colorScheme.onPrimary,
+        tonalElevation = 3.dp,
         modifier = Modifier
             .fillMaxWidth()
             .height(150.dp)
-            .padding(15.dp)
-            .shadow(3.dp, MaterialTheme.shapes.medium)
+            .padding(5.dp)
+            .shadow(3.dp, MaterialTheme.shapes.small)
     ) {
         Column(
             verticalArrangement = Arrangement.Center,
@@ -135,6 +169,8 @@ fun RouteItem(
                 text = name,
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(5.dp)
@@ -142,6 +178,8 @@ fun RouteItem(
             Spacer(modifier = Modifier.size(5.dp))
             Text(
                 text = "\uD83D\uDE80 $start",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(5.dp)
@@ -149,6 +187,8 @@ fun RouteItem(
             Spacer(modifier = Modifier.size(5.dp))
             Text(
                 text = "\uD83C\uDFC1 $end",
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(5.dp)
@@ -215,7 +255,7 @@ fun InsertRouteDialog(
                                     tint = MaterialTheme.colorScheme.error
                                 )
                         },
-                        modifier = Modifier.padding(10.dp)
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                     )
                     OutlinedTextField(
                         value = routeStart,
@@ -237,7 +277,7 @@ fun InsertRouteDialog(
                                     tint = MaterialTheme.colorScheme.error
                                 )
                         },
-                        modifier = Modifier.padding(10.dp)
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                     )
                     OutlinedTextField(
                         value = routeEnd,
@@ -259,7 +299,7 @@ fun InsertRouteDialog(
                                     tint = MaterialTheme.colorScheme.error
                                 )
                         },
-                        modifier = Modifier.padding(10.dp)
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                     )
                 }
 
@@ -288,10 +328,18 @@ fun InsertRouteDialog(
                                 )
                             )
                         }
-
                     },
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 10.dp)
+
                 ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "add_button",
+                        modifier = Modifier
+                            .size(34.dp)
+                    )
                     Text(
                         text = "Insert",
                         fontSize = 25.sp,

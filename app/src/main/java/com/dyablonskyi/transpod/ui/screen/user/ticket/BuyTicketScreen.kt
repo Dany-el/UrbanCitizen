@@ -10,15 +10,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ShoppingCart
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -61,7 +65,7 @@ fun BuyTicketDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(375.dp)
+                .height(345.dp)
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
@@ -71,10 +75,14 @@ fun BuyTicketDialog(
                 Text(
                     text = "Ticket",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(vertical = 20.dp).align(Alignment.TopCenter)
+                    modifier = Modifier
+                        .padding(vertical = 20.dp)
+                        .align(Alignment.TopCenter)
                 )
                 Column(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(10.dp)
                 ) {
                     ExposedDropdownMenuBox(
                         expanded = expanded,
@@ -83,7 +91,7 @@ fun BuyTicketDialog(
                             expanded = !expanded
                         }
                     ) {
-                        TextField(
+                        OutlinedTextField(
                             modifier = Modifier.menuAnchor(),
                             readOnly = true,
                             value = durations[Duration.entries.indexOf(selectedDuration)],
@@ -111,7 +119,7 @@ fun BuyTicketDialog(
                     }
                     Spacer(Modifier.size(20.dp))
                     Text(
-                        text = "Price $$price",
+                        text = "Price $price UAH",
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(horizontal = 15.dp)
                     )
@@ -121,6 +129,7 @@ fun BuyTicketDialog(
                     onClick = { onBuyButtonClick(selectedDuration) },
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
+                    Icon(imageVector = Icons.Rounded.ShoppingCart, contentDescription = "Cart")
                     Text(
                         text = "Buy",
                         fontSize = 25.sp,

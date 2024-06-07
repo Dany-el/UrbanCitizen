@@ -7,6 +7,7 @@ import com.dyablonskyi.transpod.data.local.db.entity.Route
 import com.dyablonskyi.transpod.data.local.db.entity.RouteDriverCount
 import com.dyablonskyi.transpod.data.local.db.entity.TransportType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +18,7 @@ import javax.inject.Inject
 class RouteViewModel @Inject constructor(
     private val repo: RouteRepository,
 ) : ViewModel() {
-    private val _routes = MutableStateFlow<MutableList<Route>>(mutableListOf())
+    private val _routes = MutableStateFlow<List<Route>>(emptyList())
     val routes: StateFlow<List<Route>> get() = _routes.asStateFlow()
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> get() = _isLoading.asStateFlow()
@@ -25,7 +26,7 @@ class RouteViewModel @Inject constructor(
     fun loadRoutes() {
         _isLoading.value = true
         viewModelScope.launch {
-            _routes.value = repo.getAll().toMutableList()
+            _routes.value = repo.getAll()
             _isLoading.value = false
         }
     }
@@ -37,35 +38,33 @@ class RouteViewModel @Inject constructor(
         }
     }
 
-    fun getRoutesByName(name: String?): List<Route> {
-        var list: List<Route> = emptyList()
+    suspend fun filterRoutesByName(name: String?) {
+        _isLoading.value = true
         viewModelScope.launch {
-            list = repo.getByName(name)
+            _routes.value = repo.getByName(name)
+            _isLoading.value = false
         }
-        return list
     }
 
-    fun countDriversPerIndividualRoute(): List<RouteDriverCount> {
-        var list: List<RouteDriverCount> = emptyList()
-        viewModelScope.launch {
-            list = repo.countDriversPerIndividualRoute()
+    suspend fun countDriversPerIndividualRoute(): List<RouteDriverCount> {
+        val list = viewModelScope.async {
+            repo.countDriversPerIndividualRoute()
         }
-        return list
+        return list.await()
     }
 
-    fun countTotalDriversPerRoute(): List<RouteDriverCount> {
-        var list: List<RouteDriverCount> = emptyList()
-        viewModelScope.launch {
-            list = repo.countTotalDriversPerRoute()
+    suspend fun countTotalDriversPerRoute(): List<RouteDriverCount> {
+        val list = viewModelScope.async {
+            repo.countTotalDriversPerRoute()
         }
-        return list
+        return list.await()
     }
 
-    fun getRoutesWithTransportTypeOf(type: TransportType): List<Route> {
-        var list: List<Route> = emptyList()
+    suspend fun filterRoutesWithTransportTypeOf(type: TransportType) {
+        _isLoading.value = true
         viewModelScope.launch {
-            list = repo.getRoutesWithTransportTypeOf(type)
+            _routes.value = repo.getRoutesWithTransportTypeOf(type)
+            _isLoading.value = false
         }
-        return list
     }
 }
