@@ -1,6 +1,8 @@
 package com.dyablonskyi.transpod.ui.screen.user
 
-import androidx.compose.animation.AnimatedVisibility
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -24,18 +26,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.dyablonskyi.transpod.data.local.db.entity.Duration
 import com.dyablonskyi.transpod.data.local.db.entity.Ticket
 import com.dyablonskyi.transpod.data.local.db.entity.TicketBuilder
+import com.dyablonskyi.transpod.ui.UIState
 import com.dyablonskyi.transpod.ui.screen.user.ticket.BuyTicketDialog
+import com.dyablonskyi.transpod.ui.screen.user.ticket.DateRangePicker
 import com.dyablonskyi.transpod.ui.screen.user.ticket.TicketItem
+import com.dyablonskyi.transpod.ui.screen.user.ticket.TicketViewModel
 import com.dyablonskyi.transpod.ui.theme.TranspodTheme
 import com.dyablonskyi.transpod.ui.util.TicketQuery
+import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,6 +138,62 @@ fun TicketList(
                     price = it.price
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun UserScreenWithDialog(
+    ticketViewModel: TicketViewModel,
+    uiState: UIState,
+    context: Context = LocalContext.current
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    UserScreen(
+        tickets = uiState.tickets,
+        onBuyButtonClick = { duration ->
+            ticketViewModel.insertTicket(TicketBuilder(duration, null).build())
+            Toast.makeText(
+                context,
+                "Have a safe trip",
+                Toast.LENGTH_SHORT
+            ).show()
+        },
+        onValueChange = { query ->
+            when (query) {
+                TicketQuery.GET_TICKETS_BY_START_DATE_IN_DURATION ->
+                    showDialog = true
+
+                TicketQuery.RETURN -> {
+                    ticketViewModel.loadTickets()
+                }
+            }
+        }
+    )
+    if (showDialog) {
+        Box(
+            Modifier.fillMaxSize()
+        ) {
+            DateRangePicker(
+                onSaveClick = {
+                    val from = Instant
+                        .ofEpochMilli(it.first)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime()
+                    val to =
+                        Instant
+                            .ofEpochMilli(it.last)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDateTime()
+
+                    coroutineScope.launch {
+                        ticketViewModel.filterTicketsByStartDateInDuration(from, to)
+                        showDialog = false
+                    }
+                },
+                onDismissRequest = { showDialog = false }
+            )
         }
     }
 }

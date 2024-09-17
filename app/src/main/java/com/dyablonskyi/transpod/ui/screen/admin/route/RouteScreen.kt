@@ -1,5 +1,7 @@
 package com.dyablonskyi.transpod.ui.screen.admin.route
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,14 +35,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,8 +57,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.dyablonskyi.transpod.R
 import com.dyablonskyi.transpod.data.local.db.entity.Route
+import com.dyablonskyi.transpod.data.local.db.entity.RouteDriverCount
+import com.dyablonskyi.transpod.ui.UIState
 import com.dyablonskyi.transpod.ui.theme.TranspodTheme
 import com.dyablonskyi.transpod.ui.util.RouteQuery
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +82,6 @@ fun RouteListScreen(
                         text = if (routes.isNotEmpty()) "Here is the list" else "The list is empty",
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(20.dp)
                     )
                 },
                 actions = {
@@ -346,6 +353,113 @@ fun InsertRouteDialog(
                         modifier = Modifier.padding(5.dp)
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun RouteScreenWithDialog(
+    routeViewModel: RouteViewModel,
+    uiState: UIState,
+    context: Context = LocalContext.current
+) {
+    var showDialog1 by remember { mutableStateOf(false) }
+    var showDialog2 by remember { mutableStateOf(false) }
+    var showDialog3 by remember { mutableStateOf(false) }
+    var showDialog4 by remember { mutableStateOf(false) }
+
+    RouteListScreen(
+        routes = uiState.routes,
+        onInsertButtonClick = {
+            routeViewModel.insertRoute(it)
+        },
+        showToastMessage = {
+            Toast.makeText(
+                context,
+                it,
+                Toast.LENGTH_SHORT
+            ).show()
+        },
+        onValueChange = { query ->
+            when (query) {
+                RouteQuery.GET_ROUTES_BY_NAME ->
+                    showDialog1 = true
+
+                RouteQuery.COUNT_DRIVERS_PER_INDIVIDUAL_ROUTE ->
+                    showDialog2 = true
+
+                RouteQuery.COUNT_TOTAL_DRIVERS ->
+                    showDialog3 = true
+
+                RouteQuery.GET_ROUTES_WITH_TRANSPORT_TYPE_OF ->
+                    showDialog4 = true
+
+                RouteQuery.RETURN -> routeViewModel.loadRoutes()
+            }
+        }
+    )
+    Box(Modifier.fillMaxSize()) {
+        when {
+            showDialog1 -> {
+                val coroutineScope = rememberCoroutineScope()
+                SearchDialog(
+                    onSearchButtonClick = { searchResult ->
+                        if (searchResult.isNotBlank() || searchResult.isNotEmpty()) {
+                            coroutineScope.launch {
+                                routeViewModel.filterRoutesByName(searchResult)
+                            }
+                        }
+                    },
+                    onDismissRequest = { showDialog1 = false }
+                )
+            }
+
+            showDialog2 -> {
+                var list: List<RouteDriverCount> by remember {
+                    mutableStateOf(
+                        emptyList()
+                    )
+                }
+
+                LaunchedEffect(Unit) {
+                    list = routeViewModel.countDriversPerIndividualRoute()
+                }
+
+                RouteDriverCountDialog(
+                    list = list,
+                    onDismissRequest = { showDialog2 = false }
+                )
+            }
+
+            showDialog3 -> {
+                var list: List<RouteDriverCount> by remember {
+                    mutableStateOf(
+                        emptyList()
+                    )
+                }
+
+                LaunchedEffect(Unit) {
+                    list = routeViewModel.countTotalDriversPerRoute()
+                }
+
+                RouteDriverCountDialog(
+                    list = list,
+                    onDismissRequest = { showDialog3 = false }
+                )
+            }
+
+            showDialog4 -> {
+                val coroutineScope = rememberCoroutineScope()
+
+                GetRoutesByTransportTypeDialog(
+                    onSelect = { type ->
+                        coroutineScope.launch {
+                            routeViewModel.filterRoutesWithTransportTypeOf(type)
+                        }
+                    },
+                    onDismissRequest = { showDialog4 = false }
+                )
             }
         }
     }

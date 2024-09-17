@@ -1,5 +1,7 @@
 package com.dyablonskyi.transpod.ui.screen.admin.driver
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +31,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -36,30 +39,41 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavHostController
 import com.dyablonskyi.transpod.R
 import com.dyablonskyi.transpod.data.local.db.entity.Driver
 import com.dyablonskyi.transpod.data.local.db.entity.DriverWithRouteAndTransport
 import com.dyablonskyi.transpod.data.local.db.entity.Route
 import com.dyablonskyi.transpod.data.local.db.entity.Transport
 import com.dyablonskyi.transpod.data.local.db.entity.TransportType
+import com.dyablonskyi.transpod.ui.LoadingScreen
+import com.dyablonskyi.transpod.ui.UIState
+import com.dyablonskyi.transpod.ui.navigateSingleToTop
+import com.dyablonskyi.transpod.ui.screen.admin.transport.TransportViewModel
 import com.dyablonskyi.transpod.ui.theme.TranspodTheme
 import com.dyablonskyi.transpod.ui.util.DriverQuery
+import com.dyablonskyi.transpod.ui.util.InsertScreen
 import com.dyablonskyi.transpod.ui.util.PhoneVisualTransformation
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -474,6 +488,110 @@ fun PhoneNumberOutlinedField(
         visualTransformation = PhoneVisualTransformation(mask, maskNumber),
         modifier = modifier
     )
+}
+
+@Composable
+fun DriverScreenWithDialogs(
+    driverViewModel: DriverViewModel,
+    uiState: UIState,
+    navController: NavHostController
+) {
+    var showDialog1 by remember {
+        mutableStateOf(false)
+    }
+
+    var showDialog2 by remember {
+        mutableStateOf(false)
+    }
+
+    DriverListScreen(
+        drivers = uiState.drivers,
+        onInsertButtonClick = {
+            navController.navigateSingleToTop(InsertScreen.DriverInsert.route)
+        },
+        onValueChange = { query ->
+            when (query) {
+                DriverQuery.COUNT_DRIVER_WITHOUT_TRANSPORT -> showDialog1 = true
+                DriverQuery.GET_DRIVERS_BY_ROUTE -> showDialog2 = true
+            }
+        }
+    )
+    if (showDialog1) {
+        var num: Int by remember { mutableIntStateOf(-1) }
+        LaunchedEffect(num) {
+            num = driverViewModel.countDriversWithoutTransport()
+        }
+        if (num < 0) {
+            Dialog(onDismissRequest = { }) {
+                Box(
+                    modifier = Modifier
+                        .height(70.dp)
+                        .width(100.dp)
+                ) {
+                    LinearProgressIndicator(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp)
+                    )
+                }
+            }
+        } else {
+            CountDriverWithoutTransportDialog(
+                num = num,
+                onDismissRequest = { showDialog1 = false }
+            )
+        }
+    }
+
+    if (showDialog2) {
+        var list: List<Driver> by remember { mutableStateOf(emptyList()) }
+        val coroutineScope = rememberCoroutineScope()
+
+        GetDriversByRouteIdDialog(
+            routes = uiState.routes,
+            drivers = list,
+            onSelect = { id ->
+                coroutineScope.launch {
+                    list = driverViewModel.getDriversByRouteId(id)
+                }
+            },
+            onDismissRequest = {
+                showDialog2 = false
+            }
+        )
+    }
+}
+
+@Composable
+fun DriverInsertScreenWithLoading(
+    driverViewModel: DriverViewModel,
+    transportViewModel: TransportViewModel,
+    uiState: UIState,
+    navController: NavHostController,
+    context: Context = LocalContext.current
+) {
+    LaunchedEffect(Unit) {
+        transportViewModel.loadAvailableTransports()
+    }
+    if (uiState.isTransportLoading) {
+        LoadingScreen()
+    } else {
+        DriverInsertScreen(
+            routes = uiState.routes,
+            transports = uiState.availableTransports,
+            showToastMessage = { errorMsg ->
+                Toast.makeText(
+                    context,
+                    errorMsg,
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onInsertButtonClick = {
+                driverViewModel.insertDriver(it)
+                navController.popBackStack()
+            }
+        )
+    }
 }
 
 @Preview(showBackground = true)
